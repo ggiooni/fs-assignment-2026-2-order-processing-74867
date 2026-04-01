@@ -1,0 +1,54 @@
+@page "/product/{Id:int}"
+@rendermode InteractiveServer
+@inject OrderApiClient Api
+@inject CartService Cart
+@inject NavigationManager Nav
+
+<PageTitle>Product Details</PageTitle>
+
+@if (product is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-8">
+            <h2>@product.Name</h2>
+            <span class="badge bg-secondary">@product.Category</span>
+            <p class="mt-3">@product.Description</p>
+            <h4 class="text-primary">@product.Price.ToString("C")</h4>
+            <p>Stock available: <strong>@product.StockQuantity</strong></p>
+
+            <div class="mt-3">
+                <button class="btn btn-primary" @onclick="AddToCart">Add to Cart</button>
+                <a href="/" class="btn btn-outline-secondary">Back to Products</a>
+            </div>
+
+            @if (added)
+            {
+                <div class="alert alert-success mt-3">Added to cart!</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private ProductDto? product;
+    private bool added;
+
+    protected override async Task OnInitializedAsync()
+    {
+        product = await Api.GetProductAsync(Id);
+    }
+
+    private void AddToCart()
+    {
+        if (product is not null)
+        {
+            Cart.AddItem(product);
+            added = true;
+        }
+    }
+}

@@ -1,0 +1,56 @@
+@page "/cart"
+@rendermode InteractiveServer
+@inject CartService Cart
+@inject NavigationManager Nav
+
+<PageTitle>Shopping Cart</PageTitle>
+
+<h2>Shopping Cart</h2>
+
+@if (Cart.Items.Count == 0)
+{
+    <div class="alert alert-info">Your cart is empty. <a href="/">Browse products</a></div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Cart.Items)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Price.ToString("C")</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => Cart.UpdateQuantity(item.ProductId, item.Quantity - 1)">-</button>
+                        <span class="mx-2">@item.Quantity</span>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => Cart.UpdateQuantity(item.ProductId, item.Quantity + 1)">+</button>
+                    </td>
+                    <td>@((item.Price * item.Quantity).ToString("C"))</td>
+                    <td><button class="btn btn-sm btn-danger" @onclick="() => Cart.RemoveItem(item.ProductId)">Remove</button></td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total</strong></td>
+                <td><strong>@Cart.Total.ToString("C")</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="d-flex gap-2">
+        <a href="/checkout" class="btn btn-success">Proceed to Checkout</a>
+        <button class="btn btn-outline-danger" @onclick="Cart.Clear">Clear Cart</button>
+        <a href="/" class="btn btn-outline-secondary">Continue Shopping</a>
+    </div>
+}

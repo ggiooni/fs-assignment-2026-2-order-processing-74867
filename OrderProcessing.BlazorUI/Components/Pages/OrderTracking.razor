@@ -1,0 +1,111 @@
+@page "/order/{Id:int}/track"
+@rendermode InteractiveServer
+@inject OrderApiClient Api
+@implements IDisposable
+
+<PageTitle>Order Tracking</PageTitle>
+
+<h2>Order #@Id - Tracking</h2>
+
+@if (order is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Status: <span class="badge @GetStatusBadgeClass(order.Status) fs-6">@order.Status</span></h5>
+            @if (order.FailureReason is not null)
+            {
+                <div class="alert alert-danger mt-2">@order.FailureReason</div>
+            }
+        </div>
+    </div>
+
+    <h5>Progress</h5>
+    <div class="list-group mb-4">
+        @foreach (var step in steps)
+        {
+            var isCurrent = step == order.Status;
+            var isPassed = GetStepIndex(step) <= GetStepIndex(order.Status);
+            <div class="list-group-item @(isCurrent ? "list-group-item-primary" : isPassed ? "list-group-item-success" : "")">
+                @(isPassed ? "✓" : "○") @step
+            </div>
+        }
+    </div>
+
+    @if (order.Items.Count > 0)
+    {
+        <h5>Items</h5>
+        <table class="table table-sm">
+            @foreach (var item in order.Items)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>x @item.Quantity</td>
+                    <td>@item.UnitPrice.ToString("C")</td>
+                </tr>
+            }
+            <tr><td colspan="2"><strong>Total</strong></td><td><strong>@order.TotalAmount.ToString("C")</strong></td></tr>
+        </table>
+    }
+
+    @if (order.PaymentRecord is not null)
+    {
+        <h5>Payment</h5>
+        <p>Status: @order.PaymentRecord.Status | Transaction: @(order.PaymentRecord.TransactionId ?? "N/A")</p>
+    }
+
+    @if (order.ShipmentRecord is not null)
+    {
+        <h5>Shipment</h5>
+        <p>Tracking: @order.ShipmentRecord.TrackingNumber | Carrier: @order.ShipmentRecord.Carrier</p>
+        <p>Estimated Delivery: @order.ShipmentRecord.EstimatedDelivery?.ToString("d")</p>
+    }
+}
+
+<a href="/my-orders" class="btn btn-outline-secondary mt-2">Back to My Orders</a>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private OrderDto? order;
+    private Timer? timer;
+
+    private readonly string[] steps = { "Submitted", "InventoryPending", "InventoryConfirmed", "PaymentPending", "PaymentApproved", "ShippingPending", "Completed" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrder();
+        timer = new Timer(async _ =>
+        {
+            await LoadOrder();
+            await InvokeAsync(StateHasChanged);
+        }, null, 3000, 3000);
+    }
+
+    private async Task LoadOrder()
+    {
+        order = await Api.GetOrderAsync(Id);
+        if (order?.Status is "Completed" or "Failed" or "InventoryFailed" or "PaymentFailed")
+        {
+            timer?.Dispose();
+            timer = null;
+        }
+    }
+
+    private int GetStepIndex(string status)
+    {
+        var idx = Array.IndexOf(steps, status);
+        return idx >= 0 ? idx : -1;
+    }
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        "Completed" => "bg-success",
+        "Failed" or "InventoryFailed" or "PaymentFailed" => "bg-danger",
+        _ => "bg-warning"
+    };
+
+    public void Dispose() => timer?.Dispose();
+}

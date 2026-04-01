@@ -1,0 +1,102 @@
+@page "/checkout"
+@rendermode InteractiveServer
+@inject CartService Cart
+@inject OrderApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Checkout</PageTitle>
+
+<h2>Checkout</h2>
+
+@if (Cart.Items.Count == 0)
+{
+    <div class="alert alert-warning">Your cart is empty. <a href="/">Browse products</a></div>
+}
+else if (orderPlaced)
+{
+    <div class="alert alert-success">
+        <h4>Order Placed Successfully!</h4>
+        <p>Your order #@orderId has been submitted.</p>
+        <a href="/order/@orderId/track" class="btn btn-primary">Track Order</a>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <h5>Select Customer</h5>
+            <select class="form-select mb-3" @bind="customerId">
+                <option value="1">Alice Johnson</option>
+                <option value="2">Bob Smith</option>
+                <option value="3">Charlie Brown</option>
+            </select>
+
+            <h5>Order Summary</h5>
+            <table class="table table-sm">
+                @foreach (var item in Cart.Items)
+                {
+                    <tr>
+                        <td>@item.Name x @item.Quantity</td>
+                        <td class="text-end">@((item.Price * item.Quantity).ToString("C"))</td>
+                    </tr>
+                }
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td class="text-end"><strong>@Cart.Total.ToString("C")</strong></td>
+                </tr>
+            </table>
+
+            <button class="btn btn-success" @onclick="PlaceOrder" disabled="@processing">
+                @(processing ? "Processing..." : "Place Order")
+            </button>
+
+            @if (error is not null)
+            {
+                <div class="alert alert-danger mt-3">@error</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private int customerId = 1;
+    private bool processing;
+    private bool orderPlaced;
+    private int orderId;
+    private string? error;
+
+    private async Task PlaceOrder()
+    {
+        processing = true;
+        error = null;
+
+        try
+        {
+            var request = new CheckoutRequest
+            {
+                CustomerId = customerId,
+                Items = Cart.Items.Select(i => new CartItemRequest
+                {
+                    ProductId = i.ProductId,
+                    Quantity = i.Quantity
+                }).ToList()
+            };
+
+            var order = await Api.CheckoutAsync(request);
+            if (order is not null)
+            {
+                orderId = order.Id;
+                orderPlaced = true;
+                Cart.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Failed to place order: {ex.Message}";
+        }
+        finally
+        {
+            processing = false;
+        }
+    }
+}

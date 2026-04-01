@@ -1,6 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">OrderProcessing.BlazorUI</a>
+        <a class="navbar-brand" href="">Order Processing</a>
     </div>
 </div>
 
@@ -10,21 +10,27 @@
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Products
             </NavLink>
         </div>
-
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="cart">
+                <span class="bi bi-cart-fill-nav-menu" aria-hidden="true"></span> Cart (@Cart.Count)
             </NavLink>
         </div>
-
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="my-orders">
+                <span class="bi bi-list-check-nav-menu" aria-hidden="true"></span> My Orders
             </NavLink>
         </div>
     </nav>
 </div>
 
+@code {
+    [Inject] private CartService Cart { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Cart.OnChange += StateHasChanged;
+    }
+}

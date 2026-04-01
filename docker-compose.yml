@@ -1,0 +1,104 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  api:
+    build:
+      context: .
+      dockerfile: OrderProcessing.Api/Dockerfile
+    ports:
+      - "5000:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/data/orderprocessing.db
+      - RabbitMq__HostName=rabbitmq
+      - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      - db_data:/data
+
+  inventory:
+    build:
+      context: .
+      dockerfile: OrderProcessing.Inventory/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      - ConnectionStrings__DefaultConnection=Data Source=/data/orderprocessing.db
+      - RabbitMq__HostName=rabbitmq
+    volumes:
+      - db_data:/data
+
+  payment:
+    build:
+      context: .
+      dockerfile: OrderProcessing.Payment/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      - ConnectionStrings__DefaultConnection=Data Source=/data/orderprocessing.db
+      - RabbitMq__HostName=rabbitmq
+    volumes:
+      - db_data:/data
+
+  shipping:
+    build:
+      context: .
+      dockerfile: OrderProcessing.Shipping/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      - ConnectionStrings__DefaultConnection=Data Source=/data/orderprocessing.db
+      - RabbitMq__HostName=rabbitmq
+    volumes:
+      - db_data:/data
+
+  blazorui:
+    build:
+      context: .
+      dockerfile: OrderProcessing.BlazorUI/Dockerfile
+    ports:
+      - "5001:8080"
+    depends_on:
+      - api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ApiBaseUrl=http://api:8080
+      - ASPNETCORE_URLS=http://+:8080
+
+  reactadmin:
+    build:
+      context: .
+      dockerfile: OrderProcessing.ReactAdmin/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  rabbitmq_data:
+  db_data:

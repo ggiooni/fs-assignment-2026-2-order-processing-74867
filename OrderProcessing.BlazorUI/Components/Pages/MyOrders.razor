@@ -1,0 +1,71 @@
+@page "/my-orders"
+@rendermode InteractiveServer
+@inject OrderApiClient Api
+
+<PageTitle>My Orders</PageTitle>
+
+<h2>My Orders</h2>
+
+<div class="mb-3">
+    <label class="form-label">Customer:</label>
+    <select class="form-select" style="max-width:300px" @bind="customerId" @bind:after="LoadOrders">
+        <option value="1">Alice Johnson</option>
+        <option value="2">Bob Smith</option>
+        <option value="3">Charlie Brown</option>
+    </select>
+</div>
+
+@if (orders is null)
+{
+    <p>Loading...</p>
+}
+else if (orders.Count == 0)
+{
+    <div class="alert alert-info">No orders found.</div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in orders)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@order.OrderDate.ToString("g")</td>
+                    <td>@order.TotalAmount.ToString("C")</td>
+                    <td><span class="badge @GetStatusBadgeClass(order.Status)">@order.Status</span></td>
+                    <td><a href="/order/@order.Id/track" class="btn btn-sm btn-outline-primary">Track</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private int customerId = 1;
+    private List<OrderDto>? orders;
+
+    protected override async Task OnInitializedAsync() => await LoadOrders();
+
+    private async Task LoadOrders()
+    {
+        orders = await Api.GetCustomerOrdersAsync(customerId);
+    }
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        "Completed" => "bg-success",
+        "Failed" or "InventoryFailed" or "PaymentFailed" => "bg-danger",
+        "Submitted" => "bg-info",
+        _ => "bg-warning"
+    };
+}
