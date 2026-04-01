@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="OrderProcessing.Api/OrderProcessing.Api.csproj" />
+  <Project Path="OrderProcessing.BlazorUI/OrderProcessing.BlazorUI.csproj" />
+  <Project Path="OrderProcessing.Inventory/OrderProcessing.Inventory.csproj" />
+  <Project Path="OrderProcessing.Payment/OrderProcessing.Payment.csproj" />
+  <Project Path="OrderProcessing.Shared/OrderProcessing.Shared.csproj" />
+  <Project Path="OrderProcessing.Shipping/OrderProcessing.Shipping.csproj" />
+  <Project Path="OrderProcessing.Tests/OrderProcessing.Tests.csproj" />
+</Solution>
