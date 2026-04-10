@@ -70,11 +70,8 @@ try
     app.UseSerilogRequestLogging();
     app.UseMiddleware<CorrelationIdMiddleware>();
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
     app.UseCors("AllowFrontends");
     app.MapControllers();

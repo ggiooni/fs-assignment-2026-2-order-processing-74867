@@ -5,7 +5,7 @@ COPY ["OrderProcessing.Api/OrderProcessing.Api.csproj", "OrderProcessing.Api/"]
 COPY ["OrderProcessing.Shared/OrderProcessing.Shared.csproj", "OrderProcessing.Shared/"]
 RUN dotnet restore "OrderProcessing.Payment/OrderProcessing.Payment.csproj"
 COPY . .
-RUN dotnet publish "OrderProcessing.Payment/OrderProcessing.Payment.csproj" -c Release -o /app
+RUN dotnet publish "OrderProcessing.Payment/OrderProcessing.Payment.csproj" -c Release -o /app /p:ErrorOnDuplicatePublishOutputFiles=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
